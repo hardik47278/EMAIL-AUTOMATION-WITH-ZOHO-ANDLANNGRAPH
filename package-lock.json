@@ -1,0 +1,57 @@
+# WorkMates Inbox (React)
+
+A React + Vite + Tailwind rebuild of the WorkMates Streamlit dashboard —
+same backend, same endpoints, a SaaS-style UI (sidebar nav, light theme,
+card layout) instead of the Streamlit widgets.
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env   # edit VITE_API_URL if your backend isn't on :8000
+npm run dev
+```
+
+Open the printed local URL (default `http://localhost:5173`).
+
+## Backend contract
+
+This app expects the same FastAPI backend the Streamlit app talked to,
+at `VITE_API_URL` (defaults to `http://localhost:8000`):
+
+- `GET  /emails/pending`               → `{ pending: [...] }`
+- `GET  /emails/processed?limit=20`    → `{ emails: [...] }`
+- `GET  /emails/stats`                 → `{ total_today, need_attention, pending_approval, total_processed }`
+- `GET  /emails/log-only?limit=30`     → `{ emails: [...] }`
+- `POST /emails/{thread_id}/approve`
+- `POST /emails/{thread_id}/edit`      body: `{ edited_reply }`
+- `POST /emails/{thread_id}/regenerate` body: `{ feedback }`
+- `POST /emails/{gmail_id}/summarize`  → `{ summary, scores: { final }, attempts, tokens_used }`
+
+If your backend runs on a different host/port, or you open this app from
+a different origin, make sure CORS is enabled on the backend for that origin.
+
+## Structure
+
+```
+src/
+  api.js                 // fetch helpers, mirrors the Streamlit app's API calls
+  App.jsx                // layout + tab state + data loading
+  components/
+    Sidebar.jsx           // nav + live pipeline status (signature element)
+    Topbar.jsx
+    Badge.jsx              // priority / intent / status pills
+    StatCard.jsx
+    PendingCard.jsx        // approve / edit / regenerate flow
+    InboxTab.jsx + InboxCard.jsx
+    LogTab.jsx              // auto-logged emails (OTP, promos, etc.)
+    Insights.jsx
+```
+
+## Design notes
+
+- Font pairing: Manrope (headings) + Inter (body) + JetBrains Mono (ids/timestamps/pipeline).
+- Accent: indigo `#5850EC`. Priority colors: high `#E0483F`, medium `#DA8C1F`, low `#1E9E6B`.
+- The sidebar's "Pipeline" panel is a lightweight nod to the original
+  subtitle (`LangGraph · Celery · Redis · Supabase · Gmail`) — a small
+  live-status touch rather than decoration.

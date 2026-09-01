@@ -1,0 +1,32 @@
+langgraph
+langchain
+langchain-core
+langchain-openai
+openai
+
+pydantic
+
+typing-extensions
+
+python-dotenv
+redis
+pdf-reader
+python-docx
+python-pptx
+pandas
+llama-index
+pytesseract
+pillow
+pdf2image
+groq
+pip install -U transformers accelerate pillow
+pip install torch
+supabase
+dataparser
+dateparser
+tldextract
+python-whois
+dnspython
+requests
+celery redis
+imapclient

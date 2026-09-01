@@ -1,0 +1,24 @@
+id                    → unique row ID
+customer_id           → who sent email
+date                  → when
+intent                → what about
+urgency               → LOW/MEDIUM/HIGH/CRITICAL
+sentiment             → positive/neutral/frustrated/angry
+agent2_priority       → what Agent 2 decided
+agent3_priority       → what Agent 3 decided
+final_priority        → after debate
+resolved              → TRUE/FALSE
+resolution            → how it was fixed
+resolution_time_mins  → how long it took
+
+Table 2 — customer_summary
+customer_id           → primary key
+total_emails          → count of all emails
+unresolved_count      → open issues count
+most_common_intent    → top complaint type
+last_contact_date     → last email date
+sentiment_trend       → improving/stable/declining
+churn_risk            → TRUE/FALSE
+health_status         → healthy/at_risk/critical
+avg_resolution_mins   → average fix time
+last_updated          → when summary last refreshed

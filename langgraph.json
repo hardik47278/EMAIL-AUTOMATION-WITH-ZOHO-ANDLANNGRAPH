@@ -1,0 +1,13 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "hitl_graph":      "./humaninloop2.py:hitl_graph",
+    "spam_graph":      "./subgraph.py:spam_graph",
+    "summarizer":      "./summarizer_agent.py:summarizer_graph",
+    "meeting_graph":   "./meeting_agent.py:graph",
+    "intent_graph":    "./subgraph.py:intent_graph",
+    "priority_graph":  "./subgraph.py:priority_graph",
+    "personal_graph":  "./subgraph.py:personal_graph"
+  },
+  "env": ".env"
+}

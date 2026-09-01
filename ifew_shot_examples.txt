@@ -1,0 +1,256 @@
+==================================================
+INTENT DETECTION EXAMPLES
+==================================================
+
+EMAIL:
+How do I measure the success of my email automation strategy?
+
+OUTPUT:
+{
+  "intents":[
+    {
+      "type":"information_request",
+      "confidence":0.98
+    }
+  ],
+  "primary_intent":"information_request",
+  "multi_intent":false
+}
+
+--------------------------------------------------
+
+EMAIL:
+Improve your email deliverability and clean inactive contacts.
+
+OUTPUT:
+{
+  "intents":[
+    {
+      "type":"modification",
+      "confidence":0.92
+    }
+  ],
+  "primary_intent":"modification",
+  "multi_intent":false
+}
+
+--------------------------------------------------
+
+EMAIL:
+Campaign performance increased by 2361%.
+
+OUTPUT:
+{
+  "intents":[
+    {
+      "type":"notification",
+      "confidence":0.95
+    }
+  ],
+  "primary_intent":"notification",
+  "multi_intent":false
+}
+
+--------------------------------------------------
+
+EMAIL:
+Create automated email sequences and segment your audience.
+
+OUTPUT:
+{
+  "intents":[
+    {
+      "type":"task_request",
+      "confidence":0.97
+    }
+  ],
+  "primary_intent":"task_request",
+  "multi_intent":false
+}
+
+--------------------------------------------------
+
+EMAIL:
+Please schedule a demo and also send pricing details.
+
+OUTPUT:
+{
+  "intents":[
+    {
+      "type":"meeting",
+      "confidence":0.95
+    },
+    {
+      "type":"information_request",
+      "confidence":0.91
+    }
+  ],
+  "primary_intent":"meeting",
+  "multi_intent":true
+}
+
+==================================================
+URGENCY DETECTION EXAMPLES
+==================================================
+
+EMAIL:
+Read our guide on email marketing automation.
+
+OUTPUT:
+{
+  "urgency":"LOW"
+}
+
+--------------------------------------------------
+
+EMAIL:
+Improve deliverability to increase campaign performance.
+
+OUTPUT:
+{
+  "urgency":"MEDIUM"
+}
+
+--------------------------------------------------
+
+EMAIL:
+Your emails may go directly to spam if your domain is not warmed up.
+
+OUTPUT:
+{
+  "urgency":"HIGH"
+}
+
+--------------------------------------------------
+
+EMAIL:
+All customer emails are failing to send right now.
+
+OUTPUT:
+{
+  "urgency":"CRITICAL"
+}
+
+--------------------------------------------------
+
+EMAIL:
+Production is down and customers cannot access the service.
+
+OUTPUT:
+{
+  "urgency":"CRITICAL"
+}
+
+==================================================
+SENTIMENT DETECTION EXAMPLES
+==================================================
+
+EMAIL:
+Our customers increased conversions by 2361%.
+
+OUTPUT:
+{
+  "sentiment":"positive"
+}
+
+--------------------------------------------------
+
+EMAIL:
+This guide explains email marketing automation.
+
+OUTPUT:
+{
+  "sentiment":"neutral"
+}
+
+--------------------------------------------------
+
+EMAIL:
+We are disappointed with the current performance.
+
+OUTPUT:
+{
+  "sentiment":"dissatisfied"
+}
+
+--------------------------------------------------
+
+EMAIL:
+Your support team has not responded for 5 days.
+
+OUTPUT:
+{
+  "sentiment":"frustrated"
+}
+
+--------------------------------------------------
+
+EMAIL:
+This outage is unacceptable and has affected all our customers.
+
+OUTPUT:
+{
+  "sentiment":"angry"
+}
+
+==================================================
+MULTI-INTENT EXAMPLES
+==================================================
+
+EMAIL:
+Please schedule a meeting next week.
+Also send the updated pricing document.
+
+OUTPUT:
+{
+  "intents":[
+    "meeting",
+    "information_request"
+  ],
+  "multi_intent":true
+}
+
+--------------------------------------------------
+
+EMAIL:
+We cannot access the dashboard.
+Please arrange a call tomorrow.
+
+OUTPUT:
+{
+  "intents":[
+    "meeting",
+    "task_request"
+  ],
+  "multi_intent":true
+}
+
+--------------------------------------------------
+
+EMAIL:
+The invoice amount looks incorrect.
+Please update it and send the revised copy.
+
+OUTPUT:
+{
+  "intents":[
+    "modification",
+    "payment"
+  ],
+  "multi_intent":true
+}
+
+--------------------------------------------------
+
+EMAIL:
+The system outage affected our team.
+Please schedule an urgent meeting.
+
+OUTPUT:
+{
+  "intents":[
+    "notification",
+    "meeting"
+  ],
+  "multi_intent":true
+}
