@@ -933,3 +933,236 @@ MIT License — Built by Hardik Anand, AI Engineer Intern @ Workmates Core2Cloud
 ---
 
 *WorkMates — Where AI handles the routine, humans handle what matters.*
+
+# 🔴 Redis in the AI Email Pipeline
+
+Redis is the central nervous system of this pipeline. It handles four completely separate jobs, each isolated in its own logical database.
+
+---
+
+## 📦 Database Layout
+
+```
+Redis Instance (localhost:6379)
+│
+├── db=0  →  🟡 Celery Broker      (task queue)
+├── db=1  →  🟢 Celery Backend     (task results)
+├── db=2  →  🔵 PII Shield         (anonymization sessions)
+└── db=3  →  🔴 HITL Pause State   (pending human approvals)
+```
+
+---
+
+## 🟡 db=0 — Celery Broker (Task Queue)
+
+**Job:** Hold email processing tasks in a queue between IMAP detection and Celery worker execution.
+
+```
+📧 New email arrives in Gmail
+        │
+        ▼
+📡 IMAP IDLE detects it instantly
+        │
+        ▼
+📨 fetch_and_process.delay() called
+        │
+        ▼
+🟡 Task pushed to Redis db=0 queue
+        │
+        ▼
+⚙️  Celery Worker picks up the task
+        │
+        ▼
+🚀 Full pipeline starts processing
+```
+
+**Why Redis here:**
+Without a broker, tasks would be lost if the worker crashes. Redis holds them safely in a persistent queue until a worker is available.
+
+---
+
+## 🟢 db=1 — Celery Backend (Task Results)
+
+**Job:** Store the results of completed tasks so the system can verify success or trigger retries.
+
+```
+⚙️  Celery Worker finishes processing
+        │
+        ▼
+🟢 Result stored in Redis db=1
+        │
+        ▼
+✅ Task marked SUCCESS or FAILURE
+        │
+        ▼
+🔄 Retry triggered on FAILURE (max 3 retries)
+```
+
+**Why Redis here:**
+Allows real-time monitoring of task status, automatic retries on failure, and confirmation that every email was processed successfully.
+
+---
+
+## 🔵 db=2 — PII Shield (Anonymization Sessions)
+
+**Job:** Store placeholder-to-real-value mappings for the sandwich anonymization pattern. Ensures real customer data never reaches the LLM.
+
+```
+📧 Raw email arrives
+   "Hi, my Aadhaar is 1234 5678 9012"
+        │
+        ▼
+🔍 Presidio detects PII
+        │
+        ▼
+🔵 Mapping stored in Redis db=2  ←── TTL: 30 mins
+   {
+     "{{IN_AADHAAR_1}}": "1234 5678 9012",
+     "{{PERSON_1}}":     "Rahul Sharma"
+   }
+        │
+        ▼
+🤖 LLM sees anonymized text ONLY
+   "Hi, my Aadhaar is {{IN_AADHAAR_1}}"
+        │
+        ▼
+💬 LLM generates reply with placeholders
+        │
+        ▼
+🔵 Mapping fetched from Redis db=2
+        │
+        ▼
+✅ Real values restored in final reply
+   "Dear Rahul Sharma, your Aadhaar 1234 5678 9012..."
+        │
+        ▼
+🗑️  Mapping auto-deleted after 30 mins
+```
+
+**Why Redis here:**
+Mappings must survive between the anonymize call and the deanonymize call but must not persist forever. Redis TTL handles automatic expiry without any cleanup code.
+
+---
+
+## 🔴 db=3 — HITL Pause State (Human in the Loop)
+
+**Job:** Store the complete email context while the pipeline is paused waiting for human approval.
+
+```
+🤖 Agentic reply generator produces draft
+        │
+        ▼
+⏸️  Pipeline PAUSES at interrupt() node
+        │
+        ▼
+🔴 Context stored in Redis db=3  ←── TTL: 1 hour
+   {
+     "thread_id":   "19ecb23c...",
+     "sender":      "rahul@company.com",
+     "subject":     "Production is down",
+     "draft_reply": "Dear Rahul, we are...",
+     "priority":    "HIGH",
+     "timestamp":   "2026-06-15T17:27:04"
+   }
+        │
+        ▼
+👨 Human opens dashboard
+        │
+        ├── ✅ Approve  →  pipeline resumes and sends
+        ├── ✏️  Edit    →  edited reply sent
+        └── 🔄 Regen   →  new reply generated
+                │
+                ▼
+        ▶️  Pipeline RESUMES via thread_id
+                │
+                ▼
+        📤 Email sent to customer
+                │
+                ▼
+        🗑️  Redis key deleted
+                │
+                ▼
+        💾 Supabase memory updated
+```
+
+**Why Redis here:**
+The pipeline can pause for minutes or hours. Redis safely holds state with a 1 hour TTL. LangGraph uses the thread_id to resume from exactly the right point. If no human responds within 1 hour the state expires automatically.
+
+---
+
+## 🏗️ Full Architecture
+
+```
+                    ┌─────────────────────────────┐
+                    │         Gmail Inbox          │
+                    └──────────────┬──────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │      IMAP IDLE Listener      │
+                    │  (real-time email detection) │
+                    └──────────────┬──────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │   🟡 Redis db=0 — Broker     │
+                    │         Task Queue           │
+                    └──────────────┬──────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │        Celery Worker         │
+                    └──────────────┬──────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │   🔵 Redis db=2 — PII Shield │
+                    │  anonymize → LLM → restore   │
+                    └──────────────┬──────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │     Multi-Agent Pipeline     │
+                    │  Spam → Intent → Priority    │
+                    │  Personalization → Meeting   │
+                    │     Context Merger           │
+                    │  Agentic Reply Generator     │
+                    └──────────────┬──────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │  🔴 Redis db=3 — HITL State  │
+                    │   Pipeline PAUSED HERE       │
+                    │   Awaiting human decision    │
+                    └──────────────┬──────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │  ✅ Approve / ✏️ Edit / 🔄   │
+                    └──────────────┬──────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │         Email Sent           │
+                    │  🟢 Redis db=1 — Result      │
+                    │  💾 Supabase Memory Updated  │
+                    └─────────────────────────────┘
+```
+
+---
+
+## 📊 Quick Reference
+
+| DB | Name | Written by | Read by | TTL |
+|---|---|---|---|---|
+| db=0 🟡 | Celery Broker | IMAP Listener | Celery Worker | On consume |
+| db=1 🟢 | Celery Backend | Celery Worker | Monitoring | Configurable |
+| db=2 🔵 | PII Shield | pii_shield.py | pii_shield.py | 30 minutes |
+| db=3 🔴 | HITL State | mainn.py | React UI | 1 hour |
+
+---
+
+## ▶️ Start Redis
+
+```bash
+docker start redis-server
+```
+
+Verify:
+
+```bash
+docker ps
+redis-cli ping   # should return PONG
+```
